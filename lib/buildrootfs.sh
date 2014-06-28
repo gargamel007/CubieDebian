@@ -66,7 +66,6 @@ configureBaseFS() {
 
 	#@TODO : Add crytpo module sunxi_ss for better speed
 	#@TODO : Bootsplash
-	#@TODO : Led Blinking
 	#@TODO : Lirc
 	#@TODO : module gpio_sunxi
 
@@ -162,14 +161,12 @@ configureBaseFS() {
 	# enable serial console (Debian/sysvinit way)
 	echo T0:2345:respawn:/sbin/getty -L ttyS0 115200 vt100 >> $ROOTFSDIR/etc/inittab
 
-	#@TODO : Activate later !
+	printStatus "configureBaseFS" "Installing init.d scripts"
 	#Scripts for autoresize at first boot from cubian
 	cp -u $BASEDIR/scripts/cubian-resize2fs $ROOTFSDIR/etc/init.d
 	cp -u $BASEDIR/scripts/cubian-firstrun $ROOTFSDIR/etc/init.d
 	chroot $ROOTFSDIR /bin/bash -c "chmod +x /etc/init.d/cubian-*"
-	# and startable on boot
-	#chroot $ROOTFSDIR /bin/bash -c "update-rc.d cubian-firstrun defaults"
-
+	chroot $ROOTFSDIR /bin/bash -c "update-rc.d cubian-firstrun defaults"
 	#Script to configure leds
 	cp -u $BASEDIR/scripts/blink_leds $ROOTFSDIR/etc/init.d
 	chroot $ROOTFSDIR /bin/bash -c "chmod +x /etc/init.d/blink_leds"
