@@ -168,7 +168,7 @@ configureBaseFS() {
 	cp -u $BASEDIR/scripts/cubian-firstrun $ROOTFSDIR/etc/init.d
 	chroot $ROOTFSDIR /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 	# and startable on boot
-	chroot $ROOTFSDIR /bin/bash -c "update-rc.d cubian-firstrun defaults"
+	#chroot $ROOTFSDIR /bin/bash -c "update-rc.d cubian-firstrun defaults"
 
 	#Script to configure leds
 	cp -u $BASEDIR/scripts/blink_leds $ROOTFSDIR/etc/init.d
