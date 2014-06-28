@@ -162,15 +162,18 @@ configureBaseFS() {
 	# enable serial console (Debian/sysvinit way)
 	echo T0:2345:respawn:/sbin/getty -L ttyS0 115200 vt100 >> $ROOTFSDIR/etc/inittab
 
-	#@TODO : Activate later ! 
-	##Scripts for autoresize at first boot from cubian
-	##Useless : cd $ROOTFSDIR/etc/init.d
-	#cp -u $BASEDIR/scripts/cubian-resize2fs $ROOTFSDIR/etc/init.d
-	#cp -u $BASEDIR/scripts/cubian-firstrun $ROOTFSDIR/etc/init.d
-	# make it executable
-	#chroot $ROOTFSDIR /bin/bash -c "chmod +x /etc/init.d/cubian-*"
+	#@TODO : Activate later !
+	#Scripts for autoresize at first boot from cubian
+	cp -u $BASEDIR/scripts/cubian-resize2fs $ROOTFSDIR/etc/init.d
+	cp -u $BASEDIR/scripts/cubian-firstrun $ROOTFSDIR/etc/init.d
+	chroot $ROOTFSDIR /bin/bash -c "chmod +x /etc/init.d/cubian-*"
 	# and startable on boot
-	#chroot $ROOTFSDIR /bin/bash -c "update-rc.d cubian-firstrun defaults"
+	chroot $ROOTFSDIR /bin/bash -c "update-rc.d cubian-firstrun defaults"
+
+	#Script to configure leds
+	cp -u $BASEDIR/scripts/blink_leds $ROOTFSDIR/etc/init.d
+	chroot $ROOTFSDIR /bin/bash -c "chmod +x /etc/init.d/blink_leds"
+	chroot $ROOTFSDIR /bin/bash -c "update-rc.d blink_leds defaults"
 
  	printStatus "configureBaseFS" "Installing Ramlog"
 	wget --quiet http://www.tremende.com/ramlog/download/ramlog_2.0.0_all.deb
