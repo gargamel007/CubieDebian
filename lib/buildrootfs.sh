@@ -208,12 +208,13 @@ configureBaseFS() {
 
 	#####################################
 	#BOARD DEPENDANT this for CB2 and CT
+	#Removed as this caused CPU issues (high CPU usage)
 	# eth0 should run on a dedicated processor for CB2/CBT only !
-	if ! grep -q smp_affinity $ROOTFSDIR/etc/rc.local; then
-		sed -e 's/exit 0//g' -i $ROOTFSDIR/etc/rc.local
-		echo "echo 2 > /proc/irq/\$(cat /proc/interrupts | grep eth0 | cut -f 1 -d \":\" )/smp_affinity" >> $ROOTFSDIR/etc/rc.local
-		echo "exit 0" >> $ROOTFSDIR/etc/rc.local
-	fi
+	#if ! grep -q smp_affinity $ROOTFSDIR/etc/rc.local; then
+	#	sed -e 's/exit 0//g' -i $ROOTFSDIR/etc/rc.local
+	#	echo "echo 2 > /proc/irq/\$(cat /proc/interrupts | grep eth0 | cut -f 1 -d \":\" )/smp_affinity" >> $ROOTFSDIR/etc/rc.local
+	#	echo "exit 0" >> $ROOTFSDIR/etc/rc.local
+	#fi
 
 	#Cleanup
 	cleanupRootfs
@@ -227,11 +228,19 @@ installBootFiles (){
 	#BOARD DEPENDANT this for CB2 and CT
 	cp $BASEDIR/uEnv/uEnv.cb2 $ROOTFSDIR/boot/
 	cp $BUILDPATH/linux-sunxi/arch/arm/boot/uImage $ROOTFSDIR/boot/
-	cp -R $BUILDPATH/linux-sunxi/output/lib/modules $ROOTFSDIR/lib/
-	cp -R $BUILDPATH/linux-sunxi/output/lib/firmware/ $ROOTFSDIR/lib/
-	cp -R $BUILDPATH/linux-sunxi/output/include/ $ROOTFSDIR/usr/
-	# copy Module.symvers
-	cp $BUILDPATH/linux-sunxi/Module.symvers $ROOTFSDIR/usr/include
+
+	cp $BUILDPATH/*.deb $ROOTFSDIR/tmp/
+	prepareRootfs
+	chroot $ROOTFSDIR /bin/bash -c "dpkg -i /tmp/linux-image-*.deb"
+	cleanupRootfs
+	rm $ROOTFSDIR/tmp/*.deb
+
+
+	#cp -R $BUILDPATH/linux-sunxi/output/lib/modules $ROOTFSDIR/lib/
+	#cp -R $BUILDPATH/linux-sunxi/output/lib/firmware/ $ROOTFSDIR/lib/
+	#cp -R $BUILDPATH/linux-sunxi/output/include/ $ROOTFSDIR/usr/
+	#copy Module.symvers
+	#cp $BUILDPATH/linux-sunxi/Module.symvers $ROOTFSDIR/usr/include
 }
 
 packageRootfs (){
