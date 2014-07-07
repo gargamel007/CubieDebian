@@ -212,7 +212,7 @@ configureBaseFS() {
 	# eth0 should run on a dedicated processor for CB2/CBT only !
 	#if ! grep -q smp_affinity $ROOTFSDIR/etc/rc.local; then
 	#	sed -e 's/exit 0//g' -i $ROOTFSDIR/etc/rc.local
-	#	echo "echo 2 > /proc/irq/\$(cat /proc/interrupts | grep eth0 | cut -f 1 -d \":\" )/smp_affinity" >> $ROOTFSDIR/etc/rc.local
+	#	echo "echo 2 > /proc/irq/$(cat /proc/interrupts | grep eth0 | cut -f 1 -d ":" | tr -d " ")/smp_affinity" >> $ROOTFSDIR/etc/rc.local
 	#	echo "exit 0" >> $ROOTFSDIR/etc/rc.local
 	#fi
 

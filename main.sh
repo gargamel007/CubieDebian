@@ -25,7 +25,7 @@ ROOTFSDIR="$WORKDIR/rootfs"
 BUILDPATH="$WORKDIR/buildPath"
 BUILDOUT="$WORKDIR/buildOut"
 
-VERSION="CubieDebian 0.1-alpha"
+VERSION="CubieDebian 0.2-alpha"
 ROOTPWD="1234"
 
 ###########################
@@ -57,15 +57,15 @@ printStatus "Main" "Creating Work Directories"
 cd $BASEDIR
 mkdir -p $WORKDIR $ROOTFSDIR
 
+
 fetchSources
 patchSource
 compileTools
 buildKernel
-
 bootstrapFS
 configureBaseFS
-cleanupRootfs
 installBootFiles
+cleanupRootfs
 packageRootfs
 
 #Cleaning up
