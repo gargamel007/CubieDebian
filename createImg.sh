@@ -34,7 +34,7 @@ fi
 echo "------ Creating SD Image"
 mkdir -p $DEST
 # create 2G image and mount image to next free loop device
-dd if=/dev/zero of=$DEST/cubiedebian.img bs=1M count=2000
+dd if=/dev/zero of=$DEST/cubiedebian.img bs=1M count=2000 status=noxfer
 LOOP=$(losetup -f)
 #just to make sure
 umount -l $DEST/sdcard/
@@ -44,11 +44,17 @@ losetup $LOOP $DEST/cubiedebian.img
 sync
 echo "------ Partitionning and mounting filesystem"
 # make image bootable
-dd if=$BASEDIR/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8
+dd if=$BASEDIR/u-boot-sunxi-with-spl.bin of=$LOOP bs=1024 seek=8 status=noxfer
 sync
 sleep 3
 # create one partition starting at 2048 which is default
-(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
+#Old Method
+#(echo n; echo p; echo 1; echo; echo; echo w) | fdisk $LOOP >> /dev/null || true
+#New method
+parted -s $LOOP -- mklabel msdos
+sleep 1
+parted -s $LOOP -- mkpart primary ext4  2048s -1s
+sleep 1
 # just to make sure
 sleep 3
 sync
@@ -63,7 +69,7 @@ sleep 4
 # create filesystem
 mkfs.ext4 $LOOP
 
-# tune filesystem
+# tune filesystem and disable journaling
 tune2fs -o journal_data_writeback $LOOP
 
 # label it

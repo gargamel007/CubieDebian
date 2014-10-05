@@ -137,7 +137,7 @@ configureBaseFS() {
 	sed -e "s/PermitRootLogin no/PermitRootLogin yes/g" -i $ROOTFSDIR/etc/ssh/sshd_config
 
 	printStatus "configureBaseFS" "Tweaking io/sdcard performance"
-	#Add noatime to root fs !
+	#Add noatime to root fs and tell that journaling is disabled (data=writeback)
 	if ! grep -q noatime $ROOTFSDIR/etc/fstab; then
 		echo "/dev/mmcblk0p1  /           ext4    defaults,noatime,nodiratime,data=writeback,commit=600,errors=remount-ro        0       0" >> $ROOTFSDIR/etc/fstab
 	fi
