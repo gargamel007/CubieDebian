@@ -1,15 +1,101 @@
 
-
-#git clone --depth 1 https://github.com/linux-sunxi/linux-sunxi.git --branch sunxi-3.4
-
 #WARNING: Do not use the 4.8 gcc versions of the linaro toolchain to build legacy kernels (sunxi-3.4 etc.), those seem to have issues building the kernel. Use an earlier version instead.
 #@TODO : http://wits-hep.blogspot.fr/2013/11/building-cubieboard-kernel-part-1.html
 
 
-fetchSources() {
-	local DEST=$BUILDPATH
-	mkdir -p $DEST
+fetchSourcesAndBuild() {
+    local DEST=$BUILDPATH
+    local BOARDPATH=$BUILDPATH
 
+    printStatus "fetchSources" "Downloading all sources for build and compiling"
+    # Sunxi Tools
+    DEST="$BUILDPATH/sunxi-tools";
+    getOrUpdateRepo $DEST "https://github.com/linux-sunxi/sunxi-tools.git"
+    cd $DEST
+    if needBuild $DEST; then
+        printStatus "fetchSources" "Compiling $DEST"
+        make clean && make fex2bin && make bin2fex
+        cp fex2bin bin2fex /usr/local/bin/
+        make clean
+        make 'fex2bin' CC=arm-linux-gnueabihf-gcc
+        make 'bin2fex' CC=arm-linux-gnueabihf-gcc
+        make 'nand-part' CC=arm-linux-gnueabihf-gcc
+        finishBuild $DEST
+    fi
+
+    #Cubieboard Config files
+    DEST="$BUILDPATH/cubie-configs";
+    getOrUpdateRepo $DEST "https://github.com/cubieboard/cubie_configs"
+
+    # Lirc RX and TX functionality for Allwinner A1X and A20 chips
+    DEST="$BUILDPATH/sunxi-lirc";
+    getOrUpdateRepo $DEST "https://github.com/matzrh/sunxi-lirc"
+
+    ############
+    #CB2 Section - sun7i
+    BOARDPATH="$BUILDPATH/cb2"; mkdir -p $BOARDPATH
+
+    #KERNELS
+    DEST="$BOARDPATH/kernel/dan-3.4.103/linux-sunxi";
+    getOrUpdateRepo $DEST "https://github.com/dan-and/linux-sunxi -b dan-3.4.103"
+    if needBuild $DEST; then
+        printStatus "fetchSources" "Compiling $DEST - this will take a long time"
+        make clean CROSS_COMPILE=arm-linux-gnueabihf-
+	# Adding wlan firmware to kernel source
+	cd $DEST/firmware;
+	wget --quiet https://github.com/igorpecovnik/Cubietruck-Debian/raw/master/bin/ap6210.zip
+	unzip -o ap6210.zip
+	rm ap6210.zip
+	cd $DEST
+	# get proven config
+	cp -u $BASEDIR/config/kernel.config $DEST/.config
+	#Build
+	export ARCH=arm
+	export DEB_HOST_ARCH=armhf
+	export CONCURRENCY_LEVEL=4
+	fakeroot make-kpkg --arch arm --cross-compile arm-linux-gnueabihf- --initrd --append-to-version=-aku1 kernel_image kernel_headers
+	make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRAVERSION=-aku1 uImage
+        cp arch/arm/boot/uImage ../uImage
+        export ARCH=
+        export DEB_HOST_ARCH=
+        export CONCURRENCY_LEVEL=
+        finishBuild $DEST
+    fi
+
+    #U-BOOT
+    DEST="$BOARDPATH/u-boot-sunxi";
+    getOrUpdateRepo $DEST "https://github.com/patrickhwood/u-boot -b pat-cb2-ct"
+    if needBuild $DEST; then
+        # Applying Patch for CB2 stability
+        sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/board/sunxi/dram_cubieboard2.c
+        #WARNING : DO NOT use parallel CC as compilation will fail miserably.
+        cd $DEST
+        make clean CROSS_COMPILE=arm-linux-gnueabihf-
+        make 'cubieboard2' CROSS_COMPILE=arm-linux-gnueabihf-
+        #cp -u $DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin $BUILDOUT/
+        finishBuild $DEST
+    fi
+
+    #FEX Files
+    DEST=$BOARDPATH;
+    # Applying Patch for "high load". Could cause troubles with USB OTG port
+    cp -f $BUILDPATH/cubie-configs/sysconfig/linux/cubieboard2.fex $DEST/cubieboard2.fex
+    sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubieboard2.fex
+    # Prepare fex files for VGA & HDMI
+    sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubieboard2.fex > $DEST/cb2-hdmi.fex
+    sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubieboard2.fex > $DEST/cb2-vga.fex
+    # Build bin files
+    fex2bin $DEST/cb2-hdmi.fex $DEST/cb2-hdmi.bin
+    fex2bin $DEST/cb2-vga.fex $DEST/cb2-vga.bin
+
+    ############
+    #CB1 Section - sun4i
+    #TODO
+
+    cd $BASEDIR
+}
+
+oldFetch () {
 	#@TODO : ADD SUPPORT FOR CB1 !
 	printStatus "fetchSources" "Getting Required Source Files from GitHub"
 	#########################
@@ -21,7 +107,6 @@ fetchSources() {
 		printStatus "fetchSources" "Getting sunxi-tools"
 		git clone -q https://github.com/linux-sunxi/sunxi-tools.git $DEST/sunxi-tools # Allwinner tools
 	fi
-
 	#Kernel sources tend to be huge so I opted to get only the latest revision of code
 	#Use : git clone --depth 1
 	if [ -d "$DEST/linux-sunxi" ]
@@ -29,10 +114,7 @@ fetchSources() {
 		cd $DEST/linux-sunxi; git pull -f; cd $SRC
 	else
 		printStatus "fetchSources" "Getting sunxi linux kernel"
-		# git clone https://github.com/linux-sunxi/linux-sunxi -b sunxi-devel $DEST/linux-sunxi # Experimental kernel
-		# git clone https://github.com/patrickhwood/linux-sunxi $DEST/linux-sunxi # Patwood's kernel 3.4.75+
-		# git clone https://github.com/igorpecovnik/linux-sunxi $DEST/linux-sunxi # Dan-and + patwood's kernel 3.4.91+
-		git clone -q --depth 1 https://github.com/dan-and/linux-sunxi $DEST/linux-sunxi # Dan-and 3.4.94+
+                git clone -q --depth 1 https://github.com/patrickhwood/u-boot -b pat-cb2-ct  $DEST/u-boot-sunxi
 	fi
 
 
@@ -63,20 +145,17 @@ fetchSources() {
 
 patchSource () {
 	# Applying patch for crypt and some performance tweak
-	
-	printStatus "patchSource" "Pathcing Source Files"
+        printStatus "patchSource" "Pathcing Source Files"
 	local DEST=$BUILDPATH
 	# Applying Patch for CB2 stability
 	sed -e 's/.clock = 480/.clock = 432/g' -i $DEST/u-boot-sunxi/board/sunxi/dram_cubieboard2.c
 	# Applying Patch for "high load". Could cause troubles with USB OTG port
-	sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex 
+	sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubietruck.fex
 	sed -e 's/usb_detect_type     = 1/usb_detect_type     = 0/g' -i $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex
 
 	# Prepare fex files for VGA & HDMI
-	#sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex
-	#sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/cubietruck.fex > $DEST/cubie_configs/sysconfig/linux/ct-vga.fex
 	sed -e 's/screen0_output_type.*/screen0_output_type     = 3/g' $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex > $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex
-	#sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex > $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex
+	sed -e 's/screen0_output_type.*/screen0_output_type     = 4/g' $DEST/cubie_configs/sysconfig/linux/cubieboard2.fex > $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex
 
 }
 
@@ -98,17 +177,14 @@ compileTools () {
 	make 'cubieboard2' CROSS_COMPILE=arm-linux-gnueabihf-
 	cp -u $DEST/u-boot-sunxi/u-boot-sunxi-with-spl.bin $BUILDOUT/
 
-	# hardware configuration
-	#fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $BUILDOUT/ct-vga.bin
-	#fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $BUILDOUT/ct-hdmi.bin
+	# hardware configuration for BC2
 	fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-hdmi.fex $BUILDOUT/cb2-hdmi.bin
-	#fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $BUILDOUT/cb2-vga.bin
+	fex2bin $DEST/cubie_configs/sysconfig/linux/cb2-vga.fex $BUILDOUT/cb2-vga.bin
 
 	# hardware configuration for CT or CB1
-	#fex2bin $DEST/cubie_configs/sysconfig/linux/ct-vga.fex $BUILDOUT/ct-vga.bin
-	#fex2bin $DEST/cubie_configs/sysconfig/linux/ct-hdmi.fex $BUILDOUT/ct-hdmi.bin
-	
-	cd $BASEDIR
+        # TODO
+
+        cd $BASEDIR
 }
 
 
@@ -116,8 +192,8 @@ buildKernel () {
 	printStatus "compileTools" "Compiling Kernel - This will take a while"
 	local DEST=$BUILDPATH
 	cd $DEST/linux-sunxi
-	
-	#####################################
+
+        #####################################
 	#BOARD DEPENDANT this is for CB2 and CT => sun7i
 	make clean CROSS_COMPILE=arm-linux-gnueabihf-
 
@@ -127,7 +203,7 @@ buildKernel () {
 	unzip -o ap6210.zip
 	rm ap6210.zip
 	cd $DEST/linux-sunxi
-	
+
 	#useless ? make $CTHREADS ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- sun7i_defconfig
 	# get proven config
 	cp -u $BASEDIR/config/kernel.config $DEST/linux-sunxi/.config
