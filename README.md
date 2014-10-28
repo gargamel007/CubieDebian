@@ -11,8 +11,8 @@ For now the generated images only work on cubieboard2:
 
 The default password is "1234" for both root and cubie accounts
 
-#Included features :
-## Headless Server & X Free Versions
+###Included features :
+#### Headless Server & X Free Versions
 - Expand File system to fill the  SD card on boot
 - Regenerate SSH keys on first boot
 - Blinking led : Green for CPU and Blue for SD Card access
@@ -24,13 +24,13 @@ The default password is "1234" for both root and cubie accounts
     - tweaked fstab and other misc stuff
 - Custom but simple MOTD using toilet
 
-## XFree Version only
+#### XFree Version only
 - Super light and fast to boot
 - Boots Openbox automatically and display current Ip adress
 - Firefox (iceweasel) installed
 
 
-# Planned features
+### Planned features
 - Using RAM to store Firefox profiles and data
 - Launch VNC on boot
 - Disable screen blanking on boot (user can enable it again if necessary)
