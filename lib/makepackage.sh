@@ -9,6 +9,7 @@ function copyBinFiles {
     printStatus "installBootFiles" "Copy bin files"
     cp -u $UBOOT $DEST/u-boot.bin
     cp -u $BASEDIR/createImg.sh $DEST/
+    printStatus "installBootFiles" "Copy root FS - long"
     cp -ax $ROOTFSFOLDER $DEST
     local OLDFSNAME=`basename $ROOTFSFOLDER`
     mv $DEST/$OLDFSNAME $DEST/`basename $FSDEST`

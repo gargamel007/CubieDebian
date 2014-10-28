@@ -6,8 +6,7 @@ USERPASS="1234"
 useradd -m -U -d /home/$USERNAME -s /bin/bash $USERNAME
 # set User password to 1234
 (echo $USERPASS;echo $USERPASS;) | passwd $USERNAME
-# force password change upon first login
-chage -d 0 $USERNAME
+# Do NOT force password change upon first login as it will prevent autologin :(
 
 adduser $USERNAME sudo
 adduser $USERNAME audio
