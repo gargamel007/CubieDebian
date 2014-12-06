@@ -11,11 +11,11 @@ For now the generated images only work on cubieboard2:
 
 The default password is "1234" for both root and cubie accounts
 
-###Included features :
+###Included features
 #### Headless Server & X Free Versions
-- Expand File system to fill the  SD card on boot
+- Expand File system to fill the  SD card on first boot
 - Regenerate SSH keys on first boot
-- Blinking led : Green for CPU and Blue for SD Card access
+- Blinking leds : Green for CPU and Blue for SD Card access
 - DHCP enabled - Manual MAC address change possible in /etc/network/interfaces
 - Optimization to reduce wear on SD card : 
     - SWAP is disabled
