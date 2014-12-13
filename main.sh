@@ -59,12 +59,12 @@ mkdir -p $WORKDIR $ROOTFSDIR $BUILDPATH $BUILDOUT
 #Use to force recompiling all and init base file system
 #FORCEBUILD=0 #unset to save time !
 #FORCEREBUILDBASEROOTFS=0 #unset to save time !
-FORCEBUILDXFREEROOTFS=0 #Unset to save time !
-#fetchSourcesAndBuild
-#createBaseFS
-createSimpleXfreeFS
-#packageCb2Headless
-packageCb2Xfree
+#FORCEBUILDXFREEROOTFS=0 #Unset to save time !
+fetchSourcesAndBuild
+createBaseFS
+#createSimpleXfreeFS
+packageCb2Headless
+#packageCb2Xfree
 
 #Cleaning up
 export PATH=$OLD_PATH

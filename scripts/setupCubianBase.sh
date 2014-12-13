@@ -12,7 +12,7 @@ sourcesFile="/etc/apt/sources.list"
 rm $sourcesFile
 touch $sourcesFile
 #Get all info running : sudo netselect-apt -a armhf -n -s -c fr wheezy
-#Edit output file to add wheezy updates and uncomment security
+#Edit output file to add wheezy updates and uncomment security + backports
 echo "# Debian packages for wheezy" >> $sourcesFile
 echo "deb http://debian.mirrors.ovh.net/debian/ wheezy main contrib non-free" >> $sourcesFile
 echo "deb http://debian.mirrors.ovh.net/debian/ wheezy-updates main contrib non-free" >> $sourcesFile
@@ -21,6 +21,7 @@ echo "deb http://security.debian.org/ stable/updates main contrib non-free" >> $
 echo "# Uncomment the deb-src line if you want 'apt-get source'" >> $sourcesFile
 echo "# to work with most packages." >> $sourcesFile
 echo "#deb-src http://debian.mirrors.ovh.net/debian/ wheezy main contrib non-free" >> $sourcesFile
+echo "deb http://ftp.debian.org/debian/ wheezy-backports main contrib non-free" >> $sourcesFile
 apt-get -qq update
 
 # Fix LOCALES and TimeZone
@@ -55,6 +56,10 @@ INSTPKG+=" vim less screen htop sudo locate tree ncdu toilet figlet git mosh tmu
 echo $INSTPKG
 apt-get -qq -y upgrade
 export DEBIAN_FRONTEND=noninteractive; apt-get -qq -y install $INSTPKG
+
+#Install Tmux from backports
+apt-get install -y -qq -t wheezy-backports tmux
+
 # set hostname
 DESTHOSTNAME="Cubieboard"
 echo $DESTHOSTNAME > /etc/hostname
